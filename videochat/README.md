@@ -1,70 +1,92 @@
-# Getting Started with Create React App
+# Videochat App per SAD
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- [Videochat App per SAD](#videochat-app-per-sad)
+- [Create React App](#create-react-app)
+  - [Available Scripts](#available-scripts)
+    - [`yarn start`](#yarn-start)
+    - [`yarn build`](#yarn-build)
+- [Com funciona l'aplicació?](#com-funciona-laplicació)
+  - [Què hem desenvolupat? (overview)](#què-hem-desenvolupat-overview)
+  - [Daily API](#daily-api)
+    - [State 1: meeting room state](#state-1-meeting-room-state)
+    - [State #2: participant state](#state-2-participant-state)
+    - [Conclusions del Daily call object](#conclusions-del-daily-call-object)
+
+---
+
+# Create React App
+
+Aquest projecte s'ha creat amb create-react-app [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 
-In the project directory, you can run:
+Un cop dins el directori del projecte podeu executar diversos scripts, els més comuns són:
 
 ### `yarn start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Executa la app en mode de desenvolupament, obrir localhost:3000 per fer-la correr en localhost.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Si editeu el codi, la pàgina s'actualitzarà sola.\
+Veureu els errors a la pàgina en cas de tenir-ne.
 
-### `yarn test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
 ### `yarn build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Construeix la app per producció a la carpeta `build`.
+En el nostre cas no hem executat build ja que l'aplicació està feta simplement a mètode demostratiu per l'assignatura de SAD.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Com funciona l'aplicació?
 
-### `yarn eject`
+Abans de comentar el codi, expliquem ràpidament què hem escollit per crear aquesta aplicació, i també com funciona la **API de Daily**.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Què hem desenvolupat? (overview)
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+En la nostre app, quan un usuari clica per començar una trucada, l'app crea una **sala de reunions**, li envia la URL de la sala a un nou **Daily call object**, i s'uneix a la trucada.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Aquest call object, manté informació important sobre la trucada, com per exemple:
+- Els altres participants (incloent els seus tracks de audio i video)
+- Les accions que fan els altres participants (mutejar el videeo, audio, etc)
+- Proveeix mètodes per interactuar a la reunió
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+L'aplicació utilitza aquest objecte per actualitzar l'estat de les trucades com toca, i per dur a terme les accions dels usuaris, com hem comentat als punts previs.
 
-## Learn More
+Un cop un usuari surt de la trucada, el call object es destrueix.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Daily API
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+L'objecte Daily call, és com cridar directament a la Daily API. Ens dóna control sobre la videotrucada.
 
-### Code Splitting
+Si invoquem `DailyIframe.createCallObject()` creem un call object.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Un cop creat, enviem la URL de la sala al call object per unir-nos a la trucada.
 
-### Analyzing the Bundle Size
+A part de tot això, el call object manté un registre de l'estat de la nostre trucada, tant de **l'estat de la trucada** en sí, com de **l'estat dels participants.**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### State 1: meeting room state
 
-### Making a Progressive Web App
+L'estat de la meeting room fa un seguiment de en quin estat l'actual participant de la trucada es troba.
+Aquest es pot trobar en els següents estats:
+- unir-se a trucada
+- estar dins una trucada
+- abandonar una trucada
+- tenir un error en la trucada
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Podem comprovar en l'estat que ens trobem dins la trucada mitjançant: `callObject.meetingState()`. *(Per exemple, si un participant s'està unint a la trucada, es retornarà l'estat "joining-meeting").*
 
-### Advanced Configuration
+### State #2: participant state
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+El **participant state** monitoritza *TOTS* els participants d'una trucada (incloent el local user), juntament amb l'àudio, video, o altres coses que estiguin compartint amb tots els altres participants.
 
-### Deployment
+**`callObject.participants()`** retorna un set d'objectes que pertanyen als participants, indexats per un ID que identifica quin és l'usuari.
+Els objectes de cada participant inclouen camps com `audioTrack` o `videoTrack`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Quan un usuari en concret fa un canvi del seu estat, els quals poden ser "participant-left", "participant-joined" o "participant-updated", aquest canvi s'envia a broadcast, així la resta de participants estan al corrent del seu estat.
 
-### `yarn build` fails to minify
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Conclusions del Daily call object
+
+Ara que ja hem vist com funciona el Daily call object proporcionat per [Daily](https://docs.daily.co/docs), i com interactuen els estats dintre la nostre aplicació, passem a explicar l'aplicació.
+
